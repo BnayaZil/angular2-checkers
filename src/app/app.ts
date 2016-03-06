@@ -31,6 +31,10 @@ import {Home} from './home/home';
     nav li.active {
       background-color: lightgray;
     }
+    main {
+    height: 500px;
+    width: 100%;
+    }
   `],
   template: `
     <header>
@@ -45,6 +49,9 @@ import {Home} from './home/home';
           </li>
           <li router-active>
             <a [routerLink]=" ['About'] ">About</a>
+          </li>
+          <li router-active>
+            <a [routerLink]=" ['Board'] ">Board</a>
           </li>
         </ul>
       </nav>
@@ -67,6 +74,7 @@ import {Home} from './home/home';
   { path: '/home', component: Home, name: 'Home' },
   // Async load a component using Webpack's require with es6-promise-loader and webpack `require`
   { path: '/about', loader: () => require('es6-promise!./about/about')('About'), name: 'About' },
+  { path: '/board', loader: () => require('es6-promise!./board/board')('Board'), name: 'Board' },
   { path: '/**', redirectTo: ['Index'] }
 ])
 export class App {
