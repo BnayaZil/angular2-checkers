@@ -16,13 +16,15 @@ import {Component} from 'angular2/core';
   inputs: ['square'],
   styles: [`
     :host {
+      position: absolute;
       width: 40%;
       height: 40%;
       background: #fff;
       border-radius: 50%;
       display: block;
       cursor: pointer;
-      margin: 30% auto;
+      top: 30%;
+      left: 30%;
     }
   `]
 })

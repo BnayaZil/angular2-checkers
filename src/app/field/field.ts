@@ -1,6 +1,7 @@
 import {Component, Output, EventEmitter, Input, OnChanges, SimpleChange} from 'angular2/core';
 import {Soldier} from './../soldier/soldier';
 import {Destination} from './../destination/destination';
+import {NgClass} from 'angular2/common';
 
 import * as _ from 'lodash';
 
@@ -12,9 +13,9 @@ import * as _ from 'lodash';
 
 @Component({
   selector: 'field',
-  directives: [Soldier, Destination],
+  directives: [Soldier, Destination, NgClass],
   template: `
-    <soldier *ngIf="fieldData.soldier" (square)="square" (click)="onSelectSoldier()"></soldier>
+    <soldier *ngIf="fieldData.soldier" (square)="square" (click)="onSelectSoldier()" [ngClass]="{white: fieldData.side === 'white', black: fieldData.side === 'black'}"></soldier>
     <destination *ngIf="fieldData.destination" (square)="square" (click)="onSelectDestination()"></destination>
   `,
   inputs: ['square'],
@@ -25,6 +26,7 @@ import * as _ from 'lodash';
       background: brown;
       box-sizing: border-box;
       float: left;
+      position: relative;
     }
     :host:nth-child(n):nth-child(odd):nth-child(-n+8) {
       background: #fff;

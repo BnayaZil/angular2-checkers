@@ -27,15 +27,18 @@ export class Board {
   destination: any;
   soldierChoosing: any;
   destinationChoosing: any;
+  soldierEating = new Array();
 
   constructor() {
     let square;
     for(let i = 0; i < 64; i++) {
       square = i + 1;
-      if(square <= 8 && square % 2 == 0 || square <= 16 && (square + 1) % 2 == 0 && square > 8) {
-        this.boardFields[i] = {soldier: true, destination: false};
+      if(square <= 8 && square % 2 == 0 || square <= 16 && (square + 1) % 2 == 0 && square > 8 || square <= 24 && square % 2 == 0 && square > 16) {
+        this.boardFields[i] = {soldier: true, destination: false, side: 'black'};
+      } else if(square > 56 && (square + 1) % 2 == 0 || square > 48 && square % 2 == 0 && square <= 56 || square > 40 && (square + 1) % 2 == 0 && square <= 48) {
+        this.boardFields[i] = {soldier: true, destination: false, side: 'white'};
       } else {
-        this.boardFields[i] = {soldier: false, destination: false};
+        this.boardFields[i] = {soldier: false, destination: false, side: false};
       }
     }
   }
@@ -48,8 +51,9 @@ export class Board {
     this.clearDestination(this.destinationChoosing);
     this.soldierChoosing = e;
     this.destinationChoosing = [];
-    let move = this.moveOption(e.position[0], e.position[1]);
-    let index = this.getIndexFromMove(move);
+    console.log('e', e);
+    let move = this.moveOption(e.position[0], e.position[1], e.fieldData.side);
+    let index = this.getIndexFromMoveOptions(move);
     _.forEach(index, (value, key) => {
       if(value !== 'undefiend'){
         this.boardFields[value].destination = true;
@@ -59,16 +63,31 @@ export class Board {
   }
 
   onDestinationChoosing(e) {
-    console.log('onDestinationChoosing', e);
+    console.log('this.destinationChoosing', e.id);
     this.clearDestination(this.destinationChoosing);
+    this.eatSoldier(e.id);
     this.moveSoldier(this.soldierChoosing, e);
+  }
+
+  eatSoldier(destinationIndex) {
+    let index;
+    if(this.soldierEating.length > 0) {
+      console.log('this.soldierEating[destinationIndex]', this.soldierEating);
+      index = this.getIndexFromCoordinates(this.soldierEating[destinationIndex - 1]);
+      this.boardFields[index].soldier = false;
+      this.boardFields[index].side = false;
+      this.soldierEating = [];
+    }
   }
 
   moveSoldier(soldier, destination) {
     console.log(soldier);
     console.log(destination);
-    this.boardFields[soldier.id - 1].soldier = false;
     this.boardFields[destination.id - 1].soldier = true;
+    this.boardFields[destination.id - 1].side = soldier.fieldData.side;
+    this.boardFields[soldier.id - 1].soldier = false;
+    this.boardFields[soldier.id - 1].side = false;
+
   }
 
   clearDestination(destinationArray) {
@@ -79,35 +98,81 @@ export class Board {
     });
   }
 
-  getIndexFromMove(move) {
+  getIndexFromMoveOptions(move) {
     let object = {};
     if(typeof move.right !== 'undefined') {
-      let indexRight;
-      indexRight = ((move.right[0] - 1) * 8);
-      indexRight += move.right[1];
-      indexRight -= 1;
-      object.right = indexRight;
+      object.right = this.getIndexFromCoordinates(move.right);
     }
     if(typeof move.left !== 'undefined') {
-      let indexLeft;
-      indexLeft = ((move.left[0] - 1) * 8);
-      indexLeft += move.left[1];
-      indexLeft -= 1;
-      object.left = indexLeft;
+      object.left = this.getIndexFromCoordinates(move.left);
     }
     return object;
   }
 
-  moveOption(row, col) {
+  getIndexFromCoordinates(Coordinates) {
+    let index;
+    index = ((Coordinates[0] - 1) * 8);
+    index += Coordinates[1];
+    index -= 1;
+    return index;
+  }
+
+  isFieldMoveAble(move) {
+    let index = this.getIndexFromCoordinates(move);
+    if(this.boardFields[index].side === false)
+      return {success: false};
+    let eatAble = this.canEatAble(move);
+    if(eatAble.success)
+      return {success: true, nextMove: eatAble.nextMove};
+    else
+      return {success: false, nextMove: eatAble.nextMove};
+  }
+
+  canEatAble(move) {
+    let nextMove = [];
+    if(this.soldierChoosing.position[1] > move[1])
+      nextMove[1] = move[1] - 1;
+    else
+      nextMove[1] = move[1] + 1;
+    if(this.soldierChoosing.position[0] > move[0])
+      nextMove[0] = move[0] - 1;
+    else
+      nextMove[0] = move[0] + 1;
+
+    let index = this.getIndexFromCoordinates(nextMove);
+    if(this.boardFields[index].side === false)
+        return {success: true, nextMove: nextMove}
+    return {success: false, nextMove: nextMove};
+  }
+
+  moveOption(row, col, side) {
     this.destination = {};
-    let destinationRow = row + 1;
+    let destinationRow;
+    let moveAble;
+    if(side === 'black')
+      destinationRow = row + 1;
+    else
+      destinationRow = row - 1;
+
     let destinationColLeft = col - 1;
     let destinationColRight = col + 1;
     if(col !== 1) {
-      this.destination.left = [destinationRow, destinationColLeft];
+      moveAble = this.isFieldMoveAble([destinationRow, destinationColLeft])
+      if(!moveAble.success || typeof moveAble.nextMove === 'undefined') {
+        this.destination.left = [destinationRow, destinationColLeft];
+      } else {
+        this.soldierEating[this.getIndexFromCoordinates(moveAble.nextMove)] = [destinationRow, destinationColLeft];
+        this.destination.left = moveAble.nextMove;
+      }
     }
     if(col !== 8) {
-      this.destination.right = [destinationRow, destinationColRight];
+      moveAble = this.isFieldMoveAble([destinationRow, destinationColRight])
+      if(!moveAble.success || typeof moveAble.nextMove === 'undefined') {
+        this.destination.right = [destinationRow, destinationColRight];
+      } else {
+        this.soldierEating[this.getIndexFromCoordinates(moveAble.nextMove)] = [destinationRow, destinationColRight];
+        this.destination.right = moveAble.nextMove;
+      }
     }
     return this.destination;
   }

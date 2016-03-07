@@ -18,11 +18,18 @@ import {Component} from 'angular2/core';
     :host {
       width: 80%;
       height: 80%;
-      background: #000;
       border-radius: 50%;
       display: block;
       cursor: pointer;
-      margin: 10% auto;
+      position: absolute;
+      top: 10%;
+      left: 10%;
+    }
+    :host.black {
+      background: #000;
+    }
+    :host.white {
+      background: #fff;
     }
   `]
 })
